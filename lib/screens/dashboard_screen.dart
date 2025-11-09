@@ -37,6 +37,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _dicaDoDia;
   // TODO: Adicionar estado para o Consumo do Dia (requer API nova)
 
+  double _consumoDoDia = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _apiService.getRelatorioMensal(),
         _apiService.getAlertas(),
         _apiService.getDicas(),
+        _apiService.getConsumoHoje(),
       ]);
 
       // Atualiza o estado com os resultados
@@ -64,6 +67,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Pega a primeira dica como "Dica do Dia"
         final dicas = results[3] as List<dynamic>;
         _dicaDoDia = dicas.isNotEmpty ? dicas.first : null;
+
+        final consumoHojeData = results[4] as Map<String, dynamic>;
+        // (consumoHojeData['consumo_do_dia'] pode ser int ou double,
+        //  então usamos 'as num' para segurança)
+        _consumoDoDia = (consumoHojeData['consumo_do_dia'] as num?)?.toDouble() ?? 0.0;
         
         _isLoading = false;
       });
@@ -196,11 +204,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: Colors.blue[700],
                         elevation: 4.0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-                        child: const Padding(
-                          padding: EdgeInsets.all(24.0),
+                        child: Padding( // <-- 4. MUDANÇA AQUI
+                          padding: const EdgeInsets.all(24.0),
                           child: Text(
-                            "Consumo do dia: 50L", // TODO: Conectar ao GET /api/consumo/hoje
-                            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                            // Usa a variável de estado e formata para 0 casas decimais
+                            "Consumo do dia: ${_consumoDoDia.toStringAsFixed(0)}L", 
+                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                         ),

@@ -250,7 +250,65 @@ class ApiService {
     }
   }
 
-  // Aqui adicionaremos outras funções depois (buscar consumo, dicas, etc.)
-  // Exemplo:
-  // Future<List<dynamic>> getConsumos() async { ... }
+  // Busca o consumo total do dia (GET /api/consumo/hoje)
+  Future<Map<String, dynamic>> getConsumoHoje() async {
+    final url = Uri.parse('$_baseUrl/consumo/hoje');
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body); // Retorna ex: {"consumo_do_dia": 500}
+      } else {
+        throw Exception('Falha ao carregar consumo do dia');
+      }
+    } catch (e) {
+      print('Erro em getConsumoHoje: $e');
+      rethrow;
+    }
+  }
+
+  // Busca o comparativo de gastos (GET /api/consumo/comparativo)
+  Future<Map<String, dynamic>> getComparativoMensal() async {
+    final url = Uri.parse('$_baseUrl/consumo/comparativo');
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body); // Retorna o JSON com os custos
+      } else {
+        throw Exception('Falha ao carregar comparativo');
+      }
+    } catch (e) {
+      print('Erro em getComparativoMensal: $e');
+      rethrow;
+    }
+  }
+
+  // Atualiza a senha do usuário (PUT /api/users/me/password)
+  Future<Map<String, dynamic>> updatePassword(String novaSenha) async {
+    final url = Uri.parse('$_baseUrl/users/me/password');
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.put(
+        url,
+        headers: headers,
+        body: jsonEncode({
+          'novaSenha': novaSenha,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        throw Exception(data['message'] ?? 'Falha ao atualizar senha');
+      }
+    } catch (e) {
+      print('Erro em updatePassword: $e');
+      rethrow;
+    }
+  }
 }
