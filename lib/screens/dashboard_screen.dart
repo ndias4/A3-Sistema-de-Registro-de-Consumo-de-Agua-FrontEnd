@@ -122,7 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // --- 1. MUDANÇA APLICADA (AppBar transparente) ---
       // (Você já tinha feito isso)
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('Início'),
         backgroundColor: Colors.transparent, // Deixa a AppBar transparente
         elevation: 0, // Remove a sombra
       ),
@@ -133,13 +133,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              accountName: const Text("Fernando Dias"), // TODO: Pegar nome
-              accountEmail: const Text("Carregando..."), // TODO: Pegar email
+              accountName: const Text("Fernando Dias"), 
+              accountEmail: const Text("Carregando..."), 
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Text("F", style: TextStyle(fontSize: 40.0, color: Theme.of(context).primaryColor)),
               ),
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+              decoration: BoxDecoration(
+                color: Colors.blue[700], 
+              ),
             ),
             _buildDrawerItem(context, icon: Icons.bar_chart, title: 'Relatórios', screen: const RelatoriosScreen()),
             _buildDrawerItem(context, icon: Icons.timelapse, title: 'Consumo em Tempo Real', screen: const ConsumoRealScreen()),
@@ -191,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                       // --- Resto do seu conteúdo ---
                       Card(
-                        color: Theme.of(context).primaryColor,
+                        color: Colors.blue[700],
                         elevation: 4.0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
                         child: const Padding(
@@ -217,24 +219,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 24),
                       
                       // --- 6. MUDANÇA APLICADA (Cor do Título) ---
-                      const Text(
-                        "Consumo Mensal (Últimos Meses)", 
-                        style: TextStyle(
-                          fontSize: 18, 
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white, // Alterado para branco
-                          shadows: [Shadow(blurRadius: 2.0, color: Colors.black54)]
-                        )
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        height: 200, 
-                        padding: const EdgeInsets.only(right: 16.0),
-                        child: (_relatorio == null || _relatorio!.isEmpty)
-                            ? const Center(child: Text("Sem dados para exibir o gráfico.", style: TextStyle(color: Colors.white)))
-                            : BarChart(
-                                _buildBarChartData(), 
+                      Card(
+                        elevation: 2.0,
+                        // Usando o mesmo margin e shape dos info cards
+                        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0), // Padding interno
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                "Consumo Mensal (Últimos Meses)",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87, // <-- Cor PRETA para o fundo branco
+                                ),
                               ),
+                              const SizedBox(height: 24),
+                              Container(
+                                height: 200,
+                                padding: const EdgeInsets.only(right: 16.0),
+                                child: (_relatorio == null || _relatorio!.isEmpty)
+                                    ? const Center(child: Text("Sem dados para exibir o gráfico."))
+                                    : BarChart(
+                                        _buildBarChartData(),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       
                       const SizedBox(height: 24),
@@ -305,7 +320,7 @@ BarChartData _buildBarChartData() {
               return SideTitleWidget(
                 // axisSide: meta.axisSide, // <-- LINHA REMOVIDA
                 meta: meta, 
-                child: Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                child: Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black,)),
               );
             },
             reservedSize: 30,
@@ -325,7 +340,7 @@ BarChartData _buildBarChartData() {
                 // axisSide: meta.axisSide, // <-- LINHA REMOVIDA
                 meta: meta, 
                 space: 8.0,
-                child: Text(text, style: const TextStyle(fontSize: 10)),
+                child: Text(text, style: const TextStyle(fontSize: 10, color: Colors.black,)),
               );
             },
           ),

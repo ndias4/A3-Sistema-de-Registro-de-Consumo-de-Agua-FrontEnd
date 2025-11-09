@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart'; // Importa nosso serviço de API
 
-// Importa as imagens (as mesmas da tela de login)
+// Define o caminho da imagem de fundo
 const String backgroundImagePath = 'assets/background.png';
 
 class PerfilScreen extends StatefulWidget {
@@ -99,130 +99,163 @@ class _PerfilScreenState extends State<PerfilScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // --- 1. AppBar TRANSPARENTE ---
       appBar: AppBar(
         title: const Text('Perfil do Usuário'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // --- Avatar e Botão Editar ---
-                    Center(
-                      child: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          CircleAvatar(
-                            radius: 50,
-                            // TODO: Usar a imagem do usuário quando a API suportar
-                            child: const Icon(Icons.person, size: 50),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: () { /* TODO: Implementar lógica de upload de foto */ },
-                            icon: const Icon(Icons.edit, size: 14),
-                            label: const Text('Editar foto'),
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+      // --- 2. BODY ATRÁS DA APPBAR ---
+      extendBodyBehindAppBar: true, 
+
+      // --- 3. CONTAINER COM IMAGEM DE FUNDO ---
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(backgroundImagePath),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : RefreshIndicator( // Adicionado RefreshIndicator
+                onRefresh: _loadUserProfile,
+                child: SingleChildScrollView( // Permite rolar a tela
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      // --- 4. ESPAÇAMENTO PARA O TOPO ---
+                      SizedBox(height: kToolbarHeight + 20),
+                      
+                      // --- 5. TODO O CONTEÚDO DENTRO DE UM CARD BRANCO ---
+                      Card(
+                        elevation: 3.0,
+                        margin: const EdgeInsets.symmetric(vertical: 10.0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // --- Avatar e Botão Editar ---
+                                Center(
+                                  child: Stack(
+                                    alignment: Alignment.bottomRight,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 50,
+                                        backgroundColor: Colors.grey.shade200,
+                                        child: const Icon(Icons.person, size: 50, color: Colors.grey),
+                                      ),
+                                      ElevatedButton.icon(
+                                        onPressed: () { /* TODO: Lógica de upload */ },
+                                        icon: const Icon(Icons.edit, size: 14),
+                                        label: const Text('Editar foto'),
+                                        style: ElevatedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+
+                                // --- Campo Nome ---
+                                TextFormField(
+                                  controller: _nomeController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nome',
+                                    border: OutlineInputBorder(),
+                                    suffixIcon: Icon(Icons.edit),
+                                  ),
+                                  validator: (value) => value!.isEmpty ? 'Nome não pode ser vazio' : null,
+                                ),
+                                const SizedBox(height: 16),
+
+                                // --- Campo Email ---
+                                TextFormField(
+                                  controller: _emailController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email',
+                                    border: OutlineInputBorder(),
+                                    suffixIcon: Icon(Icons.edit),
+                                  ),
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: (value) => (value == null || !value.contains('@')) ? 'Email inválido' : null,
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                // --- Campo Senha ---
+                                TextFormField(
+                                  controller: _senhaController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nova Senha',
+                                    hintText: 'Deixe em branco para não alterar',
+                                    border: OutlineInputBorder(),
+                                    suffixIcon: Icon(Icons.edit),
+                                  ),
+                                  obscureText: true,
+                                ),
+                                const SizedBox(height: 24),
+                                
+                                // --- Switch Notificações ---
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text('Notificações Pop-up'),
+                                  trailing: Switch(
+                                    value: _notificacoesAtivas,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _notificacoesAtivas = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+
+                                // --- Botão Excluir Conta ---
+                                TextButton(
+                                  onPressed: () { /* TODO: Diálogo de confirmação */ },
+                                  child: const Text(
+                                    'Excluir conta',
+                                    style: TextStyle(color: Colors.red, decoration: TextDecoration.underline),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // --- Botão Salvar ---
+                                ElevatedButton(
+                                  onPressed: _isLoading ? null : _handleSaveProfile,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red[700], 
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                  ),
+                                  child: const Text('Salvar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
                             ),
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // --- Campo Nome ---
-                    TextFormField(
-                      controller: _nomeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.edit),
-                      ),
-                      validator: (value) => value!.isEmpty ? 'Nome não pode ser vazio' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // --- Campo Email ---
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.edit),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) => (value == null || !value.contains('@')) ? 'Email inválido' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // --- Campo Senha ---
-                    TextFormField(
-                      controller: _senhaController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nova Senha',
-                        hintText: '********',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.edit),
-                      ),
-                      obscureText: true,
-                      // Não obrigatório, por isso não tem validator
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    // --- Switch Notificações ---
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Notificações Pop-up'),
-                      trailing: Switch(
-                        value: _notificacoesAtivas,
-                        onChanged: (value) {
-                          setState(() {
-                            _notificacoesAtivas = value;
-                            // TODO: Salvar esta preferência (localmente ou na API)
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // --- Botão Excluir Conta ---
-                    TextButton(
-                      onPressed: () {
-                        // TODO: Implementar diálogo de confirmação e endpoint de exclusão
-                      },
-                      child: const Text(
-                        'Excluir conta',
-                        style: TextStyle(color: Colors.red, decoration: TextDecoration.underline),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // --- Botão Salvar ---
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _handleSaveProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[700], // Cor do protótipo
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                          ),
                         ),
                       ),
-                      child: _isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
-                          : const Text('Salvar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

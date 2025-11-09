@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
-// Importa as imagens (as mesmas da tela de login)
+// Define o caminho da imagem de fundo
 const String backgroundImagePath = 'assets/background.png';
 
 class AlertasScreen extends StatefulWidget {
@@ -23,11 +23,10 @@ class _AlertasScreenState extends State<AlertasScreen> {
 
   // Função que busca os dados na API
   Future<List<dynamic>> _fetchAlertas() {
-    // O FutureBuilder vai gerenciar o estado de loading/erro
     return _apiService.getAlertas();
   }
 
-  // Função para recarregar os alertas (usado no "Limpar")
+  // Função para recarregar os alertas
   void _refreshAlertas() {
     setState(() {
       _alertasFuture = _fetchAlertas();
@@ -39,7 +38,7 @@ class _AlertasScreenState extends State<AlertasScreen> {
     try {
       bool success = await _apiService.marcarAlertaComoLido(id);
       if (success) {
-        _refreshAlertas(); // Recarrega a lista para refletir a mudança (ex: mudar a cor)
+        _refreshAlertas(); 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Alerta marcado como lido.'), backgroundColor: Colors.green),
@@ -60,7 +59,7 @@ class _AlertasScreenState extends State<AlertasScreen> {
     try {
       bool success = await _apiService.limparAlertas();
       if (success) {
-        _refreshAlertas(); // Recarrega a lista (que agora estará vazia)
+        _refreshAlertas(); 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Notificações limpas.'), backgroundColor: Colors.green),
@@ -80,101 +79,134 @@ class _AlertasScreenState extends State<AlertasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // --- 1. AppBar TRANSPARENTE ---
       appBar: AppBar(
         title: const Text('Alertas e Notificações'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _alertasFuture,
-        builder: (context, snapshot) {
-          // --- Estado de Carregamento ---
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          // --- Estado de Erro ---
-          if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar alertas: ${snapshot.error}'));
-          }
-          // --- Estado de Sucesso (Lista Vazia) ---
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Nenhum alerta recente.'));
-          }
-          
-          // --- Estado de Sucesso (Com Dados) ---
-          final alertas = snapshot.data!;
-          
-          return Column(
-            children: [
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async => _refreshAlertas(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    itemCount: alertas.length,
-                    itemBuilder: (context, index) {
-                      final alerta = alertas[index];
-                      final bool lido = alerta['lido'] ?? false;
-                      
-                      // O card de alerta individual
-                      return Card(
-                        elevation: 2.0,
-                        margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                        // Define a cor se já foi lido
-                        color: lido ? Colors.grey[200] : Colors.white,
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.warning_amber_rounded,
-                            color: lido ? Colors.grey[500] : Colors.orange,
-                          ),
-                          title: Text(
-                            alerta['mensagem'] ?? 'Alerta inválido',
-                            style: TextStyle(
-                              color: lido ? Colors.grey[600] : Colors.black,
-                              decoration: lido ? TextDecoration.lineThrough : TextDecoration.none,
+      // --- 2. BODY ATRÁS DA APPBAR ---
+      extendBodyBehindAppBar: true,
+
+      // --- 3. CONTAINER COM IMAGEM DE FUNDO ---
+      body: Container(
+        width: double.infinity,  // Garante que o fundo preencha a tela
+        height: double.infinity, // Garante que o fundo preencha a tela
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(backgroundImagePath),
+            fit: BoxFit.cover,
+          ),
+        ),
+        // O FutureBuilder agora é o filho do Container
+        child: FutureBuilder<List<dynamic>>(
+          future: _alertasFuture,
+          builder: (context, snapshot) {
+            // --- Estado de Carregamento ---
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Colors.white));
+            }
+            // --- Estado de Erro ---
+            if (snapshot.hasError) {
+              return Center(child: Text('Erro ao carregar alertas: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+            }
+            
+            // --- Estado de Sucesso (Com Dados ou Vazio) ---
+            final alertas = snapshot.data ?? [];
+
+            return Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async => _refreshAlertas(),
+                    child: alertas.isEmpty
+                      // --- Estado Vazio ---
+                      ? SingleChildScrollView( // Permite "Puxar para atualizar" mesmo vazio
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Container(
+                            height: MediaQuery.of(context).size.height * 0.7,
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'Nenhum alerta recente.', 
+                              style: TextStyle(color: Colors.white, fontSize: 16)
                             ),
                           ),
-                          // Botão para marcar como lido
-                          trailing: lido ? null : IconButton(
-                            icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                            tooltip: 'Marcar como lido',
-                            onPressed: () => _marcarComoLido(alerta['id']),
+                        )
+                      // --- Estado com Dados ---
+                      : ListView.builder(
+                          padding: EdgeInsets.only(
+                            top: kToolbarHeight + 20, // --- 4. ESPAÇAMENTO DO TOPO ---
+                            left: 8.0,
+                            right: 8.0,
+                            bottom: 8.0,
                           ),
+                          itemCount: alertas.length,
+                          itemBuilder: (context, index) {
+                            final alerta = alertas[index];
+                            final bool lido = alerta['lido'] ?? false;
+                            
+                            // O card de alerta individual (já é branco)
+                            return Card(
+                              elevation: 2.0,
+                              margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                              color: lido ? Colors.grey[200] : Colors.white,
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: lido ? Colors.grey[500] : Colors.orange,
+                                ),
+                                title: Text(
+                                  alerta['mensagem'] ?? 'Alerta inválido',
+                                  style: TextStyle(
+                                    color: lido ? Colors.grey[600] : Colors.black,
+                                    decoration: lido ? TextDecoration.lineThrough : TextDecoration.none,
+                                  ),
+                                ),
+                                trailing: lido ? null : IconButton(
+                                  icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                  tooltip: 'Marcar como lido',
+                                  onPressed: () => _marcarComoLido(alerta['id']),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
                   ),
                 ),
-              ),
-              
-              // --- Rodapé com Botões (do protótipo) ---
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Botão Marcar como Lidas (Desabilitado por enquanto)
-                    ElevatedButton(
-                      onPressed: null, // Desabilitado
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                      ),
-                      child: const Text('Marcar como lidas'),
+                
+                // --- Rodapé com Botões ---
+                // Se não houver alertas, não mostra os botões de limpar
+                if (alertas.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 32.0), // Padding extra na parte de baixo
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: null, // Desabilitado
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[300],
+                          ),
+                          child: const Text('Marcar como lidas'),
+                        ),
+                        ElevatedButton(
+                          onPressed: _limparTodosAlertas,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[700],
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Limpar notificações'),
+                        ),
+                      ],
                     ),
-                    // Botão Limpar Notificações
-                    ElevatedButton(
-                      onPressed: _limparTodosAlertas,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[700],
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Limpar notificações'),
-                    ),
-                  ],
-                ),
-              )
-            ],
-          );
-        },
+                  )
+              ],
+            );
+          },
+        ),
       ),
     );
   }
