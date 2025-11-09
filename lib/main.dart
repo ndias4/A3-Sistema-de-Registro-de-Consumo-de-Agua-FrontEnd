@@ -1,37 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart'; 
 
-import './providers/auth_provider.dart'; // Nosso provider
-import './screens/login_screen.dart';   // Tela de Login
-import './screens/dashboard_screen.dart'; // Tela Principal
-import './screens/splash_screen.dart';  // Tela de Carregamento
+import './providers/auth_provider.dart'; 
+import './screens/login_screen.dart';   
+import './screens/dashboard_screen.dart'; 
+import './screens/splash_screen.dart';  
 
-void main() {
+// 2. TRANSFORMAR O main() EM 'async'
+void main() async {
+  // 3. GARANTIR QUE O FLUTTER ESTEJA PRONTO
+  WidgetsFlutterBinding.ensureInitialized();
+  // 4. INICIALIZAR A FORMATAÇÃO DE DATAS PARA 'pt_BR'
+  await initializeDateFormatting('pt_BR', null);
+
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key}); // Adicione const
+
   @override
   Widget build(BuildContext context) {
-    // 1. Envolvemos o MaterialApp com o ChangeNotifierProvider
-    //    Isso torna o AuthProvider acessível em todo o app
     return ChangeNotifierProvider(
       create: (ctx) => AuthProvider(),
       child: MaterialApp(
         title: 'MonitorÁgua',
         theme: ThemeData(
-          primarySwatch: Colors.blue, // Tema básico
+          primarySwatch: Colors.blue, 
         ),
-        // 2. Usamos o Consumer para "ouvir" as mudanças no AuthProvider
         home: Consumer<AuthProvider>(
           builder: (ctx, auth, _) {
-            // 3. Decidimos qual tela mostrar com base no status
             if (auth.authStatus == AuthStatus.authenticated) {
-              return DashboardScreen(); // Logado -> Mostra Dashboard
+              return const DashboardScreen(); // Adicione const
             } else if (auth.authStatus == AuthStatus.unauthenticated) {
-              return LoginScreen();     // Não logado -> Mostra Login
+              return const LoginScreen(); // Adicione const
             } else {
-              return SplashScreen();    // Ainda verificando -> Mostra Carregamento
+              return SplashScreen(); 
             }
           },
         ),
